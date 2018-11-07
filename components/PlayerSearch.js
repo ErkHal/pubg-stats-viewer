@@ -35,24 +35,30 @@ class PlayerSearch extends Component {
     }
 
     getCurrentSeasonStats = async () => {
-        let allAvailableSeasons = await fetch("https://api.pubg.com/shards/steam/seasons", apiRequestConfig)
-        let seasonsJson = await allAvailableSeasons.json()
 
-        let currentSeasonId;
+        try {
+            this.setState({loading: true, networkMsg: "Searching..."})
+            let allAvailableSeasons = await fetch("https://api.pubg.com/shards/steam/seasons", apiRequestConfig)
+            let seasonsJson = await allAvailableSeasons.json()
+
+            let currentSeasonId;
         
-        seasonsJson.data.forEach(season => {
-            season.attributes.isCurrentSeason
-            ? currentSeasonId = season.id
-            : {}    
-        })
+            seasonsJson.data.forEach(season => {
+             season.attributes.isCurrentSeason
+             ? currentSeasonId = season.id
+             : {}    
+            })
 
-        let playerId = (await this.getPlayerInfo()).data[0].id
+            let playerId = (await this.getPlayerInfo()).data[0].id
 
-        let currentSeasonStats = await (await fetch(
-            `https://api.pubg.com/shards/steam/players/${playerId}/seasons/${currentSeasonId}`,
-            apiRequestConfig)).json()
+            let currentSeasonStats = await (await fetch(
+                `https://api.pubg.com/shards/steam/players/${playerId}/seasons/${currentSeasonId}`,
+                apiRequestConfig)).json()
 
-        this.setState({currentSeason: currentSeasonStats.data.attributes})
+            this.setState({loading: false, currentSeason: currentSeasonStats.data.attributes})
+        } catch(err) {
+            this.setState({networkMsg: "Player not found !"})
+        }
     }
 
     render() {
@@ -63,7 +69,7 @@ class PlayerSearch extends Component {
                     placeholder="Search user"
                     selectionColor={buttonStyles.color}/>
                 <Button onPress={this.getCurrentSeasonStats} color={buttonStyles.color} title="SEARCH"/>
-                {this.state.currentSeason && <PlayerStats stats={this.state.currentSeason}/>}
+                {this.state.currentSeason && !this.state.loading ? <PlayerStats stats={this.state.currentSeason}/> : <Text style={styles.message}>{this.state.networkMsg}</Text>}
             </View>
         );
     }
@@ -84,6 +90,12 @@ const styles = StyleSheet.create({
     },
     search: {
         color: '#FF8300'
+    },
+    message: {
+        width: 180,
+        paddingTop: 40,
+        color: '#FF8300',
+        fontSize: 30
     }
 })
 
